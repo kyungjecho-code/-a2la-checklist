@@ -65,7 +65,7 @@ table.ct{width:100%;border-collapse:collapse;}
 table.ct thead th{background:var(--navy2);padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.8px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
 table.ct tbody tr{border-bottom:1px solid var(--border);}
 table.ct td{padding:14px 16px;font-size:14px;vertical-align:middle;}
-.tc{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;width:70px;}
+.tc{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;width:70px;white-space:pre-line;}
 .tt{color:var(--text);line-height:1.5;}
 .td{color:var(--text-dim);font-size:12px;line-height:1.5;border-left:2px solid var(--accent2);padding-left:10px!important;width:240px;}
 .tj{width:180px;}
@@ -198,10 +198,24 @@ table.ct td{padding:14px 16px;font-size:14px;vertical-align:middle;}
 
 <!-- 부적합 메모 모달 -->
 <div id="noteModal" class="modal">
-  <div class="mbox">
-    <h3 style="color:var(--danger);">❗ 부적합 사항 기록</h3>
+  <div class="mbox" style="max-width:680px;width:95%;">
+    <h3 style="color:var(--danger);">✏️ 부적합 사항 필기</h3>
     <p id="note-info"></p>
-    <textarea id="note-text" placeholder="부적합 사유 및 보완 대책을 입력하세요..."></textarea>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text-dim);">펜 색상:</span>
+      <button onclick="setColor('#ef4444')" style="width:28px;height:28px;border-radius:50%;background:#ef4444;border:2px solid transparent;cursor:pointer;" id="col-red"></button>
+      <button onclick="setColor('#3b82f6')" style="width:28px;height:28px;border-radius:50%;background:#3b82f6;border:2px solid transparent;cursor:pointer;" id="col-blue"></button>
+      <button onclick="setColor('#000000')" style="width:28px;height:28px;border-radius:50%;background:#000;border:2px solid transparent;cursor:pointer;" id="col-black"></button>
+      <span style="font-size:12px;color:var(--text-dim);margin-left:8px;">굵기:</span>
+      <button onclick="setSize(2)"  style="width:28px;height:28px;border-radius:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:11px;font-weight:700;">가</button>
+      <button onclick="setSize(4)"  style="width:28px;height:28px;border-radius:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:700;">가</button>
+      <button onclick="setSize(7)"  style="width:28px;height:28px;border-radius:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:16px;font-weight:700;">가</button>
+      <button onclick="clearCanvas()" style="margin-left:auto;padding:6px 14px;border-radius:8px;background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3);font-weight:700;font-size:12px;cursor:pointer;">🗑 지우기</button>
+    </div>
+    <canvas id="noteCanvas" width="620" height="260"
+      style="width:100%;height:260px;background:white;border-radius:10px;border:2px solid var(--border);touch-action:none;cursor:crosshair;display:block;">
+    </canvas>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">✍️ 애플펜슬 또는 손가락으로 필기하세요</div>
     <div class="mbtns">
       <button class="mbtn mc" onclick="closeNoteModal(false)">취소</button>
       <button class="mbtn ms" onclick="closeNoteModal(true)">저장</button>
@@ -226,9 +240,45 @@ table.ct td{padding:14px 16px;font-size:14px;vertical-align:middle;}
 <script>
 const SK_M='a2la_m3', SK_S='a2la_s3';
 const DEF=[
-  {id:"4.1",title:"시험소 활동의 공정성을 저해하는 리스크를 식별하고 관리하는가?",desc:"상업적·재정적 압박 등 공정성을 해치는 요인을 분석하고 대응책을 마련해야 함."},
-  {id:"6.2",title:"시험 인원에 대한 역량 요구사항을 정의하고 교육을 실시하는가?",desc:"특정 시험을 수행하는 직원이 적절한 자격과 기술을 갖추었음을 보장해야 함."},
-  {id:"6.5",title:"측정에 영향을 미치는 장비는 사용 전 교정(Calibration)을 완료했는가?",desc:"장비의 측정 소급성 확보를 위해 유효한 교정 상태를 유지해야 함."}
+  {id:"0",  title:"하드카피 대응시 관리본, 비관리본(유효본 도장) 날인 확인", desc:""},
+  {id:"1",  title:"최신규격 확보여부", desc:""},
+  {id:"2",  title:"최신 절차서가 최신규격에 맞게 개정관리 되고 있는지 확인한다", desc:""},
+  {id:"3",  title:"개정문서에 승인여부(결재) 확인한다.", desc:""},
+  {id:"4\n(시험성적서)", title:"성적서에 제목", desc:""},
+  {id:"5\n(시험성적서)", title:"시험실의 명칭 및 주소", desc:""},
+  {id:"6\n(시험성적서)", title:"식별표시(TR No.) 및 발행날짜", desc:""},
+  {id:"7\n(시험성적서)", title:"각 페이지 위에 이 페이지가 성적서 일부임을 인식할 수 있도록 해당페이지/총페이지 식별 표시", desc:""},
+  {id:"8\n(시험성적서)", title:"성적서 끝에 대한 분명한 식별 표시", desc:""},
+  {id:"9\n(시험성적서)", title:"고객 이름 주소", desc:""},
+  {id:"10\n(시험성적서)", title:"사용방법의 식별", desc:""},
+  {id:"11\n(시험성적서)", title:"시험품목에 대한 기술, 조건 및 명확한 확인", desc:""},
+  {id:"12\n(시험성적서)", title:"시험품목 인수일자 및 시험일자 및 발행일자", desc:""},
+  {id:"13\n(시험성적서)", title:"외부공급자로부터 결과인 경우, 명확한 표시", desc:""},
+  {id:"14\n(시험성적서)", title:"시험에 사용된 절차 및 규격 개정년도", desc:""},
+  {id:"15\n(시험성적서)", title:"시험규격에서 요구하는 항목", desc:""},
+  {id:"16\n(기록지)", title:"성적서 TR No.와 일치하는지 / 시험 수행일자 기준으로 작성되었는지 확인", desc:""},
+  {id:"17\n(기록지)", title:"장비 및 장비제조사 / 소프트웨어 및 버전정보 / 차기 교정예정일자 확인", desc:""},
+  {id:"18\n(기록지)", title:"시험관련 정보 기입 : 시험명, 시험조건, 환경조건, 시험샘플, 날짜, 시험자, 결과", desc:""},
+  {id:"19\n(기록지)", title:"필요한 경우, 시험 전 유효성 검토 결과 기록여부를 확인", desc:""},
+  {id:"20", title:"기록내용 변경된 내용이 있는경우, 수정 원칙 준수 여부 확인. (삭제 X, 횡선 적용)", desc:""},
+  {id:"21", title:"기록내용 중 환경조건은 고객 요구사항에 맞게 기입되었는지 확인한다 (e.g 규격 및 고객 요구조건에 습도 조건이 있는경우, 습도 정보 기입되었는지 확인필요)", desc:""},
+  {id:"22", title:"21번항과 연계하여 요구조건에 맞게 해당 시험실의 환경 조건 기준표에 습도관리기준이 명시되었는지 확인한다.", desc:""},
+  {id:"23", title:"성적서 TR No기준으로 QR코드 발행여부를 확인한다. (신뢰성 시스템)", desc:""},
+  {id:"24", title:"시험의뢰일자 - 시험수행일자 선/후 관계 문제없는지 확인한다.", desc:""},
+  {id:"25", title:"유효성 검토 보고서(중간점검)가 작성되었는지 확인한다 (반출교정장비인경우, 필히 수행필요)", desc:""},
+  {id:"26", title:"유효성 검증 수행 결과값이 기록되었는지 확인한다.", desc:""},
+  {id:"27", title:"유효성 검증 수행 결과값에 대한 합불 기준이 있는지 확인한다.", desc:""},
+  {id:"28", title:"유효성 검증 수행 결과값에 대해서 불합격인 경우, 시정예방조치보고서 기록유무 확인한다.", desc:""},
+  {id:"29", title:"시험실별 온습도 측정 Sheet에 기록유무 확인한다.", desc:""},
+  {id:"30", title:"장비 이력 대장에 검교정 기준수록 여부, 시험수행이력, 유지보수현황이 기록되었는지 확인", desc:""},
+  {id:"31", title:"장비의 차기 교정일자에 맞게 교정되었는지 확인한다.", desc:""},
+  {id:"32", title:"교정성적서에 합불 도장이 마킹되었는지 확인한다.", desc:""},
+  {id:"33", title:"장비 허용오차범위에 맞게 판정을 했는지 확인한다. (측정불확도값 감안할 경우, 이를 포함하여 판정할 것)", desc:""},
+  {id:"34", title:"유지보수(점검) 수행 시 이후 후속조치(장비 유효성 확인) 현황 기록이 있는지 확인한다. - 일상점검, 유효성 검토 등", desc:""},
+  {id:"35", title:"출력물 워터마크 표시가 없을 것.", desc:""},
+  {id:"36", title:"표준물질 사용 유무를 확인한다.", desc:""},
+  {id:"37", title:"표준물질 사용 시 반드시 입고 물품 보고서를 통해 검토되었는지 확인한다.", desc:""},
+  {id:"38", title:"입고된 물품은 용기 표면에 물품명, 유효기간, 주의사항, 관리자 등이 식별되는지 확인한다.", desc:""}
 ];
 let masterItems=[], scopes=[], active=null, editing=null, descOn=true, adminOn=false;
 let toastT=null;
@@ -305,6 +355,7 @@ function saveScopeName(){if(!active)return;active.name=document.getElementById('
 function renderTable(){
   document.getElementById('ck-tbody').innerHTML=masterItems.map((item,idx)=>{
     const val=active.results[idx],note=active.notes[idx];
+    const noteHtml=note?`<img src="${note}" style="max-width:100%;max-height:80px;border-radius:4px;border:1px solid var(--border);">`:'';
     return`<tr>
       <td class="tc">${esc(item.id)}</td>
       <td class="tt">${esc(item.title)}</td>
@@ -314,7 +365,7 @@ function renderTable(){
           <button class="jbtn${val==='Yes'?' yes':''}" id="jy-${idx}" onclick="setResult(${idx},'Yes')">✅ Yes</button>
           <button class="jbtn${val==='No'?' no':''}" id="jn-${idx}" onclick="setResult(${idx},'No')">❌ No</button>
         </div>
-        <div class="inote${note?' show':''}" id="inote-${idx}">${note?'🚩 '+esc(note):''}</div>
+        <div class="inote${note?' show':''}" id="inote-${idx}">${noteHtml}</div>
       </td>
     </tr>`;
   }).join('');
@@ -328,20 +379,42 @@ function setResult(idx,val){
   if(val==='No'){
     editing={idx};
     document.getElementById('note-info').textContent=`[${masterItems[idx].id}] ${masterItems[idx].title}`;
-    document.getElementById('note-text').value=active.notes[idx];
     document.getElementById('noteModal').classList.add('open');
+    // 캔버스 초기화 후 기존 필기 복원
+    setTimeout(()=>{
+      initCanvas();
+      const saved=active.notes[editing.idx];
+      if(saved){
+        const img=new Image();
+        img.onload=()=>{ canvasCtx.drawImage(img,0,0); };
+        img.src=saved;
+      }
+    },50);
   }else{
     active.notes[idx]="";
-    const el=document.getElementById(`inote-${idx}`);el.textContent="";el.classList.remove('show');
+    const el=document.getElementById(`inote-${idx}`);
+    el.innerHTML="";el.classList.remove('show');
     save();updateGlobal();renderSidebar();
   }
 }
+
 function closeNoteModal(doSave){
   if(doSave&&editing){
-    const note=document.getElementById('note-text').value;
-    active.notes[editing.idx]=note;
+    const canvas=document.getElementById('noteCanvas');
+    const dataUrl=canvas.toDataURL('image/png');
+    // 빈 캔버스 체크 (흰 배경만 있으면 저장 안 함)
+    const blank=document.createElement('canvas');
+    blank.width=canvas.width;blank.height=canvas.height;
+    const bctx=blank.getContext('2d');bctx.fillStyle='white';bctx.fillRect(0,0,blank.width,blank.height);
+    const isEmpty=(dataUrl===blank.toDataURL('image/png'));
+    active.notes[editing.idx]=isEmpty?'':dataUrl;
     const el=document.getElementById(`inote-${editing.idx}`);
-    el.textContent=note?'🚩 '+note:'';el.classList.toggle('show',!!note);
+    if(!isEmpty){
+      el.innerHTML=`<img src="${dataUrl}" style="max-width:100%;max-height:80px;border-radius:4px;border:1px solid var(--border);">`;
+      el.classList.add('show');
+    }else{
+      el.innerHTML='';el.classList.remove('show');
+    }
     save();
   }else if(!doSave&&editing){
     const idx=editing.idx;
@@ -352,6 +425,64 @@ function closeNoteModal(doSave){
   }
   editing=null;document.getElementById('noteModal').classList.remove('open');
   updateGlobal();renderSidebar();
+}
+
+// ── 캔버스 필기 ──
+let canvasCtx=null, drawing=false, penColor='#000000', penSize=4;
+
+function initCanvas(){
+  const canvas=document.getElementById('noteCanvas');
+  canvasCtx=canvas.getContext('2d');
+  canvasCtx.fillStyle='white';
+  canvasCtx.fillRect(0,0,canvas.width,canvas.height);
+  canvasCtx.strokeStyle=penColor;
+  canvasCtx.lineWidth=penSize;
+  canvasCtx.lineCap='round';
+  canvasCtx.lineJoin='round';
+
+  // 터치/마우스 이벤트
+  canvas.onpointerdown=(e)=>{
+    drawing=true;
+    const p=getPos(canvas,e);
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(p.x,p.y);
+    e.preventDefault();
+  };
+  canvas.onpointermove=(e)=>{
+    if(!drawing)return;
+    const p=getPos(canvas,e);
+    canvasCtx.lineTo(p.x,p.y);
+    canvasCtx.stroke();
+    e.preventDefault();
+  };
+  canvas.onpointerup=canvas.onpointerleave=()=>{ drawing=false; };
+}
+
+function getPos(canvas,e){
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width;
+  const scaleY=canvas.height/rect.height;
+  return{x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY};
+}
+
+function setColor(c){
+  penColor=c;
+  if(canvasCtx){canvasCtx.strokeStyle=c;}
+  document.querySelectorAll('[id^="col-"]').forEach(b=>b.style.border='2px solid transparent');
+  const map={'#ef4444':'col-red','#3b82f6':'col-blue','#000000':'col-black'};
+  if(map[c])document.getElementById(map[c]).style.border='2px solid white';
+}
+
+function setSize(s){
+  penSize=s;
+  if(canvasCtx){canvasCtx.lineWidth=s;}
+}
+
+function clearCanvas(){
+  if(!canvasCtx)return;
+  const canvas=document.getElementById('noteCanvas');
+  canvasCtx.fillStyle='white';
+  canvasCtx.fillRect(0,0,canvas.width,canvas.height);
 }
 
 function updateGlobal(){
