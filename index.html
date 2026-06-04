@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+:root {
+  --navy:#0a1628; --navy2:#112240; --accent:#00d4aa; --accent2:#f59e0b;
+  --danger:#ef4444; --success:#10b981; --text:#e2e8f0; --text-dim:#94a3b8;
+  --surface:#1e3a5f; --surface2:#162d4a; --border:rgba(255,255,255,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:var(--navy);color:var(--text);display:flex;flex-direction:column;}
+
+/* 헤더 */
+#hdr{height:64px;background:var(--navy2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;}
+#hdr h1{font-size:17px;font-weight:900;color:var(--accent);white-space:nowrap;}
+#hdr h1 span{color:var(--text);font-weight:400;}
+.hstats{display:flex;gap:8px;flex:1;justify-content:center;overflow-x:auto;}
+.hs{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;text-align:center;min-width:72px;flex-shrink:0;}
+.hs .hl{font-size:10px;color:var(--text-dim);display:block;}
+.hs .hv{font-size:18px;font-weight:700;font-family:monospace;}
+.hs.yes .hv{color:var(--success);} .hs.no .hv{color:var(--danger);} .hs.prog .hv{color:var(--accent);}
+.hbtns{display:flex;gap:6px;flex-shrink:0;}
+.hbtn{padding:8px 12px;border-radius:8px;border:none;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit;}
+.hbtn:active{opacity:.7;}
+.hbtn-add{background:var(--accent);color:var(--navy);}
+.hbtn-admin{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+.hbtn-reset{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3);}
+
+/* 레이아웃 */
+#app{display:flex;flex:1;overflow:hidden;}
+
+/* 사이드바 */
+#sidebar{width:260px;background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+#sb-hdr{padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;}
+.sc-cnt{background:var(--surface);color:var(--accent);font-family:monospace;padding:2px 8px;border-radius:20px;font-size:12px;}
+#scope-nav{flex:1;overflow-y:auto;}
+.sni{padding:12px 16px;cursor:pointer;border-left:3px solid transparent;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px;}
+.sni.active{background:var(--surface2);border-left-color:var(--accent);}
+.sni-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sni.active .sni-name{color:var(--accent);}
+.sni-bar{height:3px;background:var(--surface);border-radius:2px;overflow:hidden;}
+.sni-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
+.sni-stats{display:flex;gap:8px;font-size:11px;font-family:monospace;}
+.sni-stats .ok{color:var(--success);} .sni-stats .ng{color:var(--danger);} .sni-stats .rm{color:var(--text-dim);}
+
+/* 메인 */
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+#view-checklist{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+#empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text-dim);}
+#empty .ico{font-size:50px;opacity:.2;}
+#scope-content{display:none;flex-direction:column;flex:1;overflow:hidden;}
+#ck-hdr{padding:16px 20px 12px;background:var(--navy2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+#ck-title{font-size:20px;font-weight:900;color:var(--text);outline:none;flex:1;background:transparent;border:none;border-bottom:2px solid transparent;padding-bottom:2px;font-family:inherit;transition:border-color .2s;}
+#ck-title:focus{border-bottom-color:var(--accent);color:var(--accent);}
+.sbtns{display:flex;gap:6px;}
+.sbtn{padding:7px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;font-family:inherit;}
+.sbtn:active{opacity:.7;}
+.sbtn-desc{background:var(--surface);color:var(--text-dim);border:1px solid var(--border);}
+.sbtn-del{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.25);}
+#ck-wrap{flex:1;overflow-y:auto;}
+table.ct{width:100%;border-collapse:collapse;}
+table.ct thead th{background:var(--navy2);padding:10px 16px;font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.8px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+table.ct tbody tr{border-bottom:1px solid var(--border);}
+table.ct td{padding:14px 16px;font-size:14px;vertical-align:middle;}
+.tc{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent2);text-align:center;width:70px;white-space:pre-line;}
+.tt{color:var(--text);line-height:1.5;}
+.td{color:var(--text-dim);font-size:12px;line-height:1.5;border-left:2px solid var(--accent2);padding-left:10px!important;width:240px;}
+.tj{width:180px;}
+.jbtns{display:flex;gap:6px;}
+.jbtn{flex:1;padding:12px 6px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text-dim);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-family:inherit;transition:all .15s;}
+.jbtn:active{transform:scale(.95);}
+.jbtn.yes{background:rgba(16,185,129,.2);color:var(--success);border-color:rgba(16,185,129,.4);}
+.jbtn.no{background:rgba(239,68,68,.2);color:var(--danger);border-color:rgba(239,68,68,.4);}
+.inote{margin-top:6px;font-size:11px;color:var(--danger);background:rgba(239,68,68,.1);border-radius:5px;padding:5px 8px;line-height:1.4;display:none;}
+.inote.show{display:block;}
+.hidden{display:none!important;}
+
+/* 관리자 뷰 */
+#view-admin{flex:1;overflow-y:auto;padding:20px;display:none;flex-direction:column;gap:20px;}
+.acard{background:var(--navy2);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.acard h2{font-size:16px;margin-bottom:4px;color:var(--accent);}
+.acard p{font-size:12px;color:var(--text-dim);margin-bottom:16px;}
+.afrow{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.afrow input,.afrow textarea{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:10px 14px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;}
+.afrow input:focus,.afrow textarea:focus{border-color:var(--accent);}
+.afrow input.f1{flex:1;min-width:100px;} .afrow input.f3{flex:3;min-width:180px;}
+.afrow textarea{flex:1;min-width:260px;height:70px;resize:vertical;}
+.abtn{background:var(--accent);color:var(--navy);padding:10px 20px;border-radius:9px;border:none;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;}
+.atable{width:100%;border-collapse:collapse;margin-top:12px;}
+.atable th{background:var(--surface2);padding:10px 14px;font-size:11px;color:var(--text-dim);text-align:left;border-bottom:1px solid var(--border);}
+.atable td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);vertical-align:top;}
+.atable td .cl{font-family:monospace;color:var(--accent2);font-weight:700;}
+.atable td .dd{color:var(--text-dim);font-size:12px;}
+.dbtn{padding:6px 12px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:var(--danger);font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;}
+
+/* 모달 */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal.open{display:flex;}
+.mbox{background:var(--navy2);border:1px solid var(--border);border-radius:18px;padding:24px;width:90%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.5);}
+.mbox h3{font-size:17px;margin-bottom:6px;}
+.mbox p{font-size:13px;color:var(--text-dim);margin-bottom:14px;line-height:1.5;}
+.mbox textarea{width:100%;height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:12px;font-size:14px;font-family:inherit;resize:none;outline:none;}
+.mbox textarea:focus{border-color:var(--accent);}
+.mbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;}
+.mbtn{padding:10px 20px;border-radius:9px;border:none;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;}
+.mbtn:active{opacity:.7;}
+.mc{background:var(--surface);color:var(--text-dim);}
+.ms{background:var(--accent);color:var(--navy);}
+.md{background:var(--danger);color:#fff;}
+
+/* 토스트 */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:var(--navy);padding:10px 20px;border-radius:25px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;opacity:0;pointer-events:none;z-index:9999;transition:opacity .3s,transform .3s;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <h1>🔬 A2LA <span>점검</span></h1>
+  <div class="hstats">
+    <div class="hs prog"><span class="hl">진행률</span><div class="hv" id="g-prog">0%</div></div>
+    <div class="hs"><span class="hl">총항목</span><div class="hv" id="g-total">0</div></div>
+    <div class="hs yes"><span class="hl">YES</span><div class="hv" id="g-yes">0</div></div>
+    <div class="hs no"><span class="hl">NO</span><div class="hv" id="g-no">0</div></div>
+    <div class="hs"><span class="hl">미점검</span><div class="hv" id="g-rem">0</div></div>
+  </div>
+  <div class="hbtns">
+    <button class="hbtn hbtn-add" onclick="createNewScope()">＋ 스코프</button>
+    <button class="hbtn hbtn-admin" id="admin-btn" onclick="toggleAdmin()">⚙️ 항목관리</button>
+    <button class="hbtn hbtn-reset" onclick="openResetModal()">🗑️</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div id="sb-hdr">심사범위 목록 <span class="sc-cnt" id="sc-cnt">0</span></div>
+    <div id="scope-nav"></div>
+  </div>
+  <div id="main">
+
+    <!-- 점검 뷰 -->
+    <div id="view-checklist">
+      <div id="empty">
+        <div class="ico">📋</div>
+        <p>좌측에서 심사범위를 선택하세요</p>
+      </div>
+      <div id="scope-content">
+        <div id="ck-hdr">
+          <input id="ck-title" type="text" placeholder="스코프 이름" onblur="saveScopeName()">
+          <div class="sbtns">
+            <button class="sbtn sbtn-desc" onclick="toggleDesc()">👁 해설</button>
+            <button class="sbtn sbtn-del" onclick="deleteCurrentScope()">🗑 삭제</button>
+          </div>
+        </div>
+        <div id="ck-wrap">
+          <table class="ct">
+            <thead><tr>
+              <th style="width:70px;text-align:center;">조항</th>
+              <th>점검 항목</th>
+              <th class="desc-col">해설</th>
+              <th style="width:180px;text-align:center;">판정</th>
+            </tr></thead>
+            <tbody id="ck-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 관리자 뷰 -->
+    <div id="view-admin">
+      <div class="acard">
+        <h2>➕ 새 점검항목 등록</h2>
+        <p>등록/삭제한 항목은 모든 심사범위에 실시간 연동됩니다.</p>
+        <div class="afrow">
+          <input type="text" class="f1" id="ai-id" placeholder="조항번호 (예: 6.4)">
+          <input type="text" class="f3" id="ai-title" placeholder="점검 항목 내용">
+        </div>
+        <div class="afrow">
+          <textarea id="ai-desc" placeholder="요구조항 해설 (선택사항)"></textarea>
+        </div>
+        <button class="abtn" onclick="addMasterItem()">➕ 등록 / 업데이트</button>
+      </div>
+      <div class="acard">
+        <h2>📋 등록된 마스터 항목</h2>
+        <p id="ai-cnt">총 0개 항목</p>
+        <table class="atable">
+          <thead><tr><th style="width:80px;">조항</th><th>점검 내용</th><th>해설</th><th style="width:70px;text-align:center;">관리</th></tr></thead>
+          <tbody id="ai-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 부적합 메모 모달 -->
+<div id="noteModal" class="modal">
+  <div class="mbox" style="max-width:680px;width:95%;">
+    <h3 style="color:var(--danger);">✏️ 부적합 사항 필기</h3>
+    <p id="note-info"></p>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--text-dim);">펜 색상:</span>
+      <button onclick="setColor('#ef4444')" style="width:32px;height:32px;border-radius:50%;background:#ef4444;border:3px solid transparent;cursor:pointer;" id="col-red"></button>
+      <button onclick="setColor('#3b82f6')" style="width:32px;height:32px;border-radius:50%;background:#3b82f6;border:3px solid transparent;cursor:pointer;" id="col-blue"></button>
+      <button onclick="setColor('#000000')" style="width:32px;height:32px;border-radius:50%;background:#000;border:3px solid white;cursor:pointer;" id="col-black"></button>
+      <span style="font-size:12px;color:var(--text-dim);margin-left:8px;">굵기:</span>
+      <button onclick="setSize(2)"  style="width:32px;height:32px;border-radius:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:11px;font-weight:700;">가</button>
+      <button onclick="setSize(4)"  style="width:32px;height:32px;border-radius:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:13px;font-weight:700;">가</button>
+      <button onclick="setSize(7)"  style="width:32px;height:32px;border-radius:8px;background:var(--surface);color:var(--text);border:1px solid var(--border);cursor:pointer;font-size:16px;font-weight:700;">가</button>
+      <button onclick="clearCanvas()" style="margin-left:auto;padding:8px 16px;border-radius:8px;background:rgba(239,68,68,.15);color:var(--danger);border:1px solid rgba(239,68,68,.3);font-weight:700;font-size:13px;cursor:pointer;">🗑 지우기</button>
+    </div>
+    <canvas id="noteCanvas" width="620" height="280"
+      style="width:100%;height:280px;background:white;border-radius:10px;border:2px solid var(--border);display:block;user-select:none;-webkit-user-select:none;">
+    </canvas>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">✍️ 애플펜슬 또는 손가락으로 필기하세요</div>
+    <div class="mbtns">
+      <button class="mbtn mc" onclick="closeNoteModal(false)">취소</button>
+      <button class="mbtn ms" onclick="closeNoteModal(true)">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 초기화 모달 -->
+<div id="resetModal" class="modal">
+  <div class="mbox">
+    <h3 style="color:var(--danger);">⚠️ 전체 데이터 초기화</h3>
+    <p>모든 점검 결과, 스코프, 마스터 항목이 <strong style="color:var(--danger);">완전히 삭제</strong>됩니다.<br>되돌릴 수 없습니다.</p>
+    <div class="mbtns">
+      <button class="mbtn mc" onclick="closeResetModal()">취소</button>
+      <button class="mbtn md" onclick="doReset()">초기화 확인</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">💾 자동 저장 완료</div>
+
+<script>
+const SK_M='a2la_m3', SK_S='a2la_s3';
+const DEF=[
+  {id:"0",  title:"하드카피 대응시 관리본, 비관리본(유효본 도장) 날인 확인", desc:""},
+  {id:"1",  title:"최신규격 확보여부", desc:""},
+  {id:"2",  title:"최신 절차서가 최신규격에 맞게 개정관리 되고 있는지 확인한다", desc:""},
+  {id:"3",  title:"개정문서에 승인여부(결재) 확인한다.", desc:""},
+  {id:"4\n(시험성적서)", title:"성적서에 제목", desc:""},
+  {id:"5\n(시험성적서)", title:"시험실의 명칭 및 주소", desc:""},
+  {id:"6\n(시험성적서)", title:"식별표시(TR No.) 및 발행날짜", desc:""},
+  {id:"7\n(시험성적서)", title:"각 페이지 위에 이 페이지가 성적서 일부임을 인식할 수 있도록 해당페이지/총페이지 식별 표시", desc:""},
+  {id:"8\n(시험성적서)", title:"성적서 끝에 대한 분명한 식별 표시", desc:""},
+  {id:"9\n(시험성적서)", title:"고객 이름 주소", desc:""},
+  {id:"10\n(시험성적서)", title:"사용방법의 식별", desc:""},
+  {id:"11\n(시험성적서)", title:"시험품목에 대한 기술, 조건 및 명확한 확인", desc:""},
+  {id:"12\n(시험성적서)", title:"시험품목 인수일자 및 시험일자 및 발행일자", desc:""},
+  {id:"13\n(시험성적서)", title:"외부공급자로부터 결과인 경우, 명확한 표시", desc:""},
+  {id:"14\n(시험성적서)", title:"시험에 사용된 절차 및 규격 개정년도", desc:""},
+  {id:"15\n(시험성적서)", title:"시험규격에서 요구하는 항목", desc:""},
+  {id:"16\n(기록지)", title:"성적서 TR No.와 일치하는지 / 시험 수행일자 기준으로 작성되었는지 확인", desc:""},
+  {id:"17\n(기록지)", title:"장비 및 장비제조사 / 소프트웨어 및 버전정보 / 차기 교정예정일자 확인", desc:""},
+  {id:"18\n(기록지)", title:"시험관련 정보 기입 : 시험명, 시험조건, 환경조건, 시험샘플, 날짜, 시험자, 결과", desc:""},
+  {id:"19\n(기록지)", title:"필요한 경우, 시험 전 유효성 검토 결과 기록여부를 확인", desc:""},
+  {id:"20", title:"기록내용 변경된 내용이 있는경우, 수정 원칙 준수 여부 확인. (삭제 X, 횡선 적용)", desc:""},
+  {id:"21", title:"기록내용 중 환경조건은 고객 요구사항에 맞게 기입되었는지 확인한다 (e.g 규격 및 고객 요구조건에 습도 조건이 있는경우, 습도 정보 기입되었는지 확인필요)", desc:""},
+  {id:"22", title:"21번항과 연계하여 요구조건에 맞게 해당 시험실의 환경 조건 기준표에 습도관리기준이 명시되었는지 확인한다.", desc:""},
+  {id:"23", title:"성적서 TR No기준으로 QR코드 발행여부를 확인한다. (신뢰성 시스템)", desc:""},
+  {id:"24", title:"시험의뢰일자 - 시험수행일자 선/후 관계 문제없는지 확인한다.", desc:""},
+  {id:"25", title:"유효성 검토 보고서(중간점검)가 작성되었는지 확인한다 (반출교정장비인경우, 필히 수행필요)", desc:""},
+  {id:"26", title:"유효성 검증 수행 결과값이 기록되었는지 확인한다.", desc:""},
+  {id:"27", title:"유효성 검증 수행 결과값에 대한 합불 기준이 있는지 확인한다.", desc:""},
+  {id:"28", title:"유효성 검증 수행 결과값에 대해서 불합격인 경우, 시정예방조치보고서 기록유무 확인한다.", desc:""},
+  {id:"29", title:"시험실별 온습도 측정 Sheet에 기록유무 확인한다.", desc:""},
+  {id:"30", title:"장비 이력 대장에 검교정 기준수록 여부, 시험수행이력, 유지보수현황이 기록되었는지 확인", desc:""},
+  {id:"31", title:"장비의 차기 교정일자에 맞게 교정되었는지 확인한다.", desc:""},
+  {id:"32", title:"교정성적서에 합불 도장이 마킹되었는지 확인한다.", desc:""},
+  {id:"33", title:"장비 허용오차범위에 맞게 판정을 했는지 확인한다. (측정불확도값 감안할 경우, 이를 포함하여 판정할 것)", desc:""},
+  {id:"34", title:"유지보수(점검) 수행 시 이후 후속조치(장비 유효성 확인) 현황 기록이 있는지 확인한다. - 일상점검, 유효성 검토 등", desc:""},
+  {id:"35", title:"출력물 워터마크 표시가 없을 것.", desc:""},
+  {id:"36", title:"표준물질 사용 유무를 확인한다.", desc:""},
+  {id:"37", title:"표준물질 사용 시 반드시 입고 물품 보고서를 통해 검토되었는지 확인한다.", desc:""},
+  {id:"38", title:"입고된 물품은 용기 표면에 물품명, 유효기간, 주의사항, 관리자 등이 식별되는지 확인한다.", desc:""}
+];
+let masterItems=[], scopes=[], active=null, editing=null, descOn=true, adminOn=false;
+let toastT=null;
+
+function save(){
+  try{localStorage.setItem(SK_M,JSON.stringify(masterItems));localStorage.setItem(SK_S,JSON.stringify(scopes));showToast();}catch(e){}
+}
+function load(){
+  try{
+    const m=localStorage.getItem(SK_M),s=localStorage.getItem(SK_S);
+    if(m)masterItems=JSON.parse(m); else masterItems=JSON.parse(JSON.stringify(DEF));
+    if(s)scopes=JSON.parse(s);
+    return !!(m||s);
+  }catch(e){return false;}
+}
+function showToast(){
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  if(toastT)clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+window.onload=()=>{
+  const had=load();
+  if(!had||scopes.length===0){for(let i=1;i<=15;i++)newScope(`심사범위(Scope) #${i}`);save();}
+  renderSidebar();updateGlobal();
+};
+
+function newScope(name){
+  scopes.push({id:'S'+Date.now()+Math.floor(Math.random()*9999),name,
+    results:Array(masterItems.length).fill(null),notes:Array(masterItems.length).fill("")});
+}
+function sync(){
+  scopes.forEach(s=>{
+    while(s.results.length<masterItems.length){s.results.push(null);s.notes.push("");}
+    s.results=s.results.slice(0,masterItems.length);
+    s.notes=s.notes.slice(0,masterItems.length);
+  });
+}
+function createNewScope(){newScope(`새 심사범위 #${scopes.length+1}`);save();renderSidebar();selectScope(scopes[scopes.length-1].id);}
+function deleteCurrentScope(){
+  if(!active)return;
+  if(!confirm(`"${active.name}" 스코프를 삭제하시겠습니까?`))return;
+  scopes=scopes.filter(s=>s.id!==active.id);active=null;save();renderSidebar();
+  document.getElementById('empty').style.display='flex';
+  document.getElementById('scope-content').style.display='none';
+  updateGlobal();
+}
+
+function renderSidebar(){
+  document.getElementById('sc-cnt').textContent=scopes.length;
+  document.getElementById('scope-nav').innerHTML=scopes.map(s=>{
+    const tot=masterItems.length,yes=s.results.filter(r=>r==='Yes').length,no=s.results.filter(r=>r==='No').length;
+    const pct=tot?Math.round((yes+no)/tot*100):0,rem=tot-yes-no;
+    const isA=active&&active.id===s.id;
+    return`<div class="sni${isA?' active':''}" onclick="selectScope('${s.id}')">
+      <div class="sni-name">${esc(s.name)}</div>
+      <div class="sni-bar"><div class="sni-bar-fill" style="width:${pct}%"></div></div>
+      <div class="sni-stats"><span class="ok">✓${yes}</span><span class="ng">✗${no}</span><span class="rm">―${rem}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function selectScope(id){
+  active=scopes.find(s=>s.id===id);if(!active)return;
+  sync();
+  document.getElementById('empty').style.display='none';
+  document.getElementById('scope-content').style.display='flex';
+  document.getElementById('ck-title').value=active.name;
+  renderTable();renderSidebar();
+}
+function saveScopeName(){if(!active)return;active.name=document.getElementById('ck-title').value.trim()||active.name;save();renderSidebar();}
+
+function renderTable(){
+  document.getElementById('ck-tbody').innerHTML=masterItems.map((item,idx)=>{
+    const val=active.results[idx],note=active.notes[idx];
+    const noteHtml=note?`<img src="${note}" style="max-width:100%;max-height:80px;border-radius:4px;border:1px solid var(--border);">`:'';
+    return`<tr>
+      <td class="tc">${esc(item.id)}</td>
+      <td class="tt">${esc(item.title)}</td>
+      <td class="td desc-col${descOn?'':' hidden'}">${esc(item.desc)}</td>
+      <td class="tj">
+        <div class="jbtns">
+          <button class="jbtn${val==='Yes'?' yes':''}" id="jy-${idx}" onclick="setResult(${idx},'Yes')">✅ Yes</button>
+          <button class="jbtn${val==='No'?' no':''}" id="jn-${idx}" onclick="setResult(${idx},'No')">❌ No</button>
+        </div>
+        <div class="inote${note?' show':''}" id="inote-${idx}">${noteHtml}</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function setResult(idx,val){
+  if(!active)return;
+  active.results[idx]=val;
+  document.getElementById(`jy-${idx}`).className='jbtn'+(val==='Yes'?' yes':'');
+  document.getElementById(`jn-${idx}`).className='jbtn'+(val==='No'?' no':'');
+  if(val==='No'){
+    editing={idx};
+    document.getElementById('note-info').textContent=`[${masterItems[idx].id}] ${masterItems[idx].title}`;
+    document.getElementById('noteModal').classList.add('open');
+    setTimeout(()=>{
+      initCanvas();
+      const saved=active.notes[editing.idx];
+      if(saved){
+        const img=new Image();
+        img.onload=()=>canvasCtx.drawImage(img,0,0);
+        img.src=saved;
+      }
+    },80);
+  }else{
+    active.notes[idx]="";
+    const el=document.getElementById(`inote-${idx}`);
+    el.innerHTML="";el.classList.remove('show');
+    save();updateGlobal();renderSidebar();
+  }
+}
+
+function closeNoteModal(doSave){
+  if(doSave&&editing){
+    const canvas=document.getElementById('noteCanvas');
+    const dataUrl=canvas.toDataURL('image/png');
+    const blank=document.createElement('canvas');
+    blank.width=canvas.width;blank.height=canvas.height;
+    const bctx=blank.getContext('2d');bctx.fillStyle='white';bctx.fillRect(0,0,blank.width,blank.height);
+    const isEmpty=(dataUrl===blank.toDataURL('image/png'));
+    active.notes[editing.idx]=isEmpty?'':dataUrl;
+    const el=document.getElementById(`inote-${editing.idx}`);
+    if(!isEmpty){
+      el.innerHTML=`<img src="${dataUrl}" style="max-width:100%;max-height:80px;border-radius:4px;border:1px solid var(--border);">`;
+      el.classList.add('show');
+    }else{
+      el.innerHTML='';el.classList.remove('show');
+    }
+    save();
+  }else if(!doSave&&editing){
+    const idx=editing.idx;
+    if(active.results[idx]==='No'&&!active.notes[idx]){
+      active.results[idx]=null;
+      document.getElementById(`jn-${idx}`).className='jbtn';
+    }
+  }
+  editing=null;
+  document.getElementById('noteModal').classList.remove('open');
+  updateGlobal();renderSidebar();
+}
+
+// ── 캔버스 필기 (아이패드 터치 전용 수정) ──
+let canvasCtx=null, drawing=false, penColor='#000000', penSize=4;
+
+function initCanvas(){
+  const canvas=document.getElementById('noteCanvas');
+  canvasCtx=canvas.getContext('2d');
+  canvasCtx.fillStyle='white';
+  canvasCtx.fillRect(0,0,canvas.width,canvas.height);
+  canvasCtx.strokeStyle=penColor;
+  canvasCtx.lineWidth=penSize;
+  canvasCtx.lineCap='round';
+  canvasCtx.lineJoin='round';
+
+  // 기존 이벤트 제거 후 재등록
+  const c=canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(c,canvas);
+  const cv=document.getElementById('noteCanvas');
+  canvasCtx=cv.getContext('2d');
+  canvasCtx.fillStyle='white';
+  canvasCtx.fillRect(0,0,cv.width,cv.height);
+  canvasCtx.strokeStyle=penColor;
+  canvasCtx.lineWidth=penSize;
+  canvasCtx.lineCap='round';
+  canvasCtx.lineJoin='round';
+
+  function getXY(e){
+    const rect=cv.getBoundingClientRect();
+    const scaleX=cv.width/rect.width;
+    const scaleY=cv.height/rect.height;
+    const t=e.touches?e.touches[0]:e;
+    return{x:(t.clientX-rect.left)*scaleX, y:(t.clientY-rect.top)*scaleY};
+  }
+
+  // 터치 이벤트 (아이패드)
+  cv.addEventListener('touchstart',(e)=>{
+    e.preventDefault();e.stopPropagation();
+    drawing=true;
+    const p=getXY(e);
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(p.x,p.y);
+  },{passive:false});
+
+  cv.addEventListener('touchmove',(e)=>{
+    e.preventDefault();e.stopPropagation();
+    if(!drawing)return;
+    const p=getXY(e);
+    canvasCtx.lineTo(p.x,p.y);
+    canvasCtx.stroke();
+  },{passive:false});
+
+  cv.addEventListener('touchend',(e)=>{
+    e.preventDefault();e.stopPropagation();
+    drawing=false;
+    canvasCtx.beginPath();
+  },{passive:false});
+
+  // 마우스 이벤트 (노트북)
+  cv.addEventListener('mousedown',(e)=>{
+    drawing=true;
+    const p=getXY(e);
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(p.x,p.y);
+  });
+  cv.addEventListener('mousemove',(e)=>{
+    if(!drawing)return;
+    const p=getXY(e);
+    canvasCtx.lineTo(p.x,p.y);
+    canvasCtx.stroke();
+  });
+  cv.addEventListener('mouseup',()=>{ drawing=false; canvasCtx.beginPath(); });
+  cv.addEventListener('mouseleave',()=>{ drawing=false; });
+}
+
+function setColor(c){
+  penColor=c;
+  if(canvasCtx)canvasCtx.strokeStyle=c;
+  document.querySelectorAll('[id^="col-"]').forEach(b=>b.style.border='3px solid transparent');
+  const map={'#ef4444':'col-red','#3b82f6':'col-blue','#000000':'col-black'};
+  if(map[c])document.getElementById(map[c]).style.border='3px solid white';
+}
+
+function setSize(s){
+  penSize=s;
+  if(canvasCtx)canvasCtx.lineWidth=s;
+}
+
+function clearCanvas(){
+  const cv=document.getElementById('noteCanvas');
+  if(!canvasCtx)canvasCtx=cv.getContext('2d');
+  canvasCtx.fillStyle='white';
+  canvasCtx.fillRect(0,0,cv.width,cv.height);
+}
+
+function updateGlobal(){
+  let tot=0,yes=0,no=0;
+  scopes.forEach(s=>{tot+=masterItems.length;yes+=s.results.filter(r=>r==='Yes').length;no+=s.results.filter(r=>r==='No').length;});
+  const chk=yes+no,pct=tot?Math.round(chk/tot*100):0;
+  document.getElementById('g-prog').textContent=pct+'%';
+  document.getElementById('g-total').textContent=tot;
+  document.getElementById('g-yes').textContent=yes;
+  document.getElementById('g-no').textContent=no;
+  document.getElementById('g-rem').textContent=tot-chk;
+}
+
+function toggleDesc(){
+  descOn=!descOn;
+  document.querySelectorAll('.desc-col').forEach(el=>el.classList.toggle('hidden',!descOn));
+}
+
+function toggleAdmin(){
+  adminOn=!adminOn;
+  document.getElementById('view-checklist').style.display=adminOn?'none':'flex';
+  document.getElementById('view-admin').style.display=adminOn?'flex':'none';
+  document.getElementById('admin-btn').textContent=adminOn?'← 점검으로':'⚙️ 항목관리';
+  if(adminOn)renderAdminTable();
+}
+
+function addMasterItem(){
+  const id=document.getElementById('ai-id').value.trim();
+  const title=document.getElementById('ai-title').value.trim();
+  const desc=document.getElementById('ai-desc').value.trim();
+  if(!id||!title){alert("조항 번호와 점검 항목 내용은 필수입니다.");return;}
+  const ei=masterItems.findIndex(m=>m.id===id);
+  if(ei>-1){masterItems[ei]={id,title,desc};}
+  else{masterItems.push({id,title,desc});scopes.forEach(s=>{s.results.push(null);s.notes.push("");});}
+  document.getElementById('ai-id').value='';
+  document.getElementById('ai-title').value='';
+  document.getElementById('ai-desc').value='';
+  save();renderAdminTable();
+  if(active)renderTable();
+}
+function deleteMasterItem(id){
+  if(!confirm(`[조항 ${id}] 항목을 삭제합니다. 모든 스코프의 해당 결과도 삭제됩니다.`))return;
+  const idx=masterItems.findIndex(m=>m.id===id);if(idx<0)return;
+  masterItems.splice(idx,1);
+  scopes.forEach(s=>{s.results.splice(idx,1);s.notes.splice(idx,1);});
+  save();renderAdminTable();if(active)renderTable();
+}
+function renderAdminTable(){
+  document.getElementById('ai-cnt').textContent=`총 ${masterItems.length}개 항목`;
+  document.getElementById('ai-tbody').innerHTML=masterItems.map(item=>`
+    <tr>
+      <td><span class="cl">${esc(item.id)}</span></td>
+      <td>${esc(item.title)}</td>
+      <td><span class="dd">${esc(item.desc)}</span></td>
+      <td style="text-align:center;"><button class="dbtn" onclick="deleteMasterItem('${esc(item.id)}')">삭제</button></td>
+    </tr>`).join('');
+}
+
+function openResetModal(){document.getElementById('resetModal').classList.add('open');}
+function closeResetModal(){document.getElementById('resetModal').classList.remove('open');}
+function doReset(){
+  localStorage.removeItem(SK_M);localStorage.removeItem(SK_S);
+  masterItems=JSON.parse(JSON.stringify(DEF));scopes=[];
+  for(let i=1;i<=15;i++)newScope(`심사범위(Scope) #${i}`);
+  active=null;save();closeResetModal();renderSidebar();updateGlobal();
+  document.getElementById('empty').style.display='flex';
+  document.getElementById('scope-content').style.display='none';
+  if(adminOn){adminOn=true;toggleAdmin();}
+}
+
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
